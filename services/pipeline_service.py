@@ -1,0 +1,55 @@
+import shutil
+import subprocess
+import os
+from services.whisper_service import transcribe_audio
+from services.db_service import save_metadata
+from services.gemini_service import generate_chapter_titles
+
+def convert_mp4_to_mp3(mp4_path):
+    mp3_path = mp4_path.replace(".mp4", ".mp3")
+    try:
+        # ffmpeg를 사용하여 mp4를 mp3로 변환
+        subprocess.run(['ffmpeg', '-i', mp4_path, '-q:a', '0', '-map', 'a', mp3_path], check=True)
+        print(f"[INFO] MP4 to MP3 conversion successful: {mp3_path}")
+        return mp3_path
+    except Exception as e:
+        print(f"[ERROR] MP4 to MP3 conversion failed: {str(e)}")
+        return None
+
+def process_video(video_path, video_id, user_id, category):
+    try:
+        # Step 1: Convert MP4 to MP3
+        audio_path = convert_mp4_to_mp3(video_path)
+        if not audio_path:
+            print("[ERROR] Audio conversion failed.")
+            return None
+
+        # Step 2: Transcribe audio from the converted mp3 file
+        transcription = transcribe_audio(audio_path)
+        if not transcription:
+            print("[ERROR] Transcription failed.")
+            return None
+
+        # Step 3: Generate chapter titles from transcription
+        chapter_path = generate_chapter_titles(audio_path, video_id)
+        if not chapter_path:
+            print("[ERROR] Chapter title generation failed.")
+            return None
+
+        # Step 4: Save metadata to PostgreSQL
+        summary = "Generated summary"  # Placeholder
+        metadata = {
+            "video_id": video_id,
+            "user_id": user_id,
+            "category": category,
+            "status": "processed",
+            "file_url": video_path,
+            "transcription": "\n".join(transcription),
+            "summary": summary
+        }
+        save_metadata(video_id, metadata)
+        print("[INFO] Pipeline completed successfully.")
+        return metadata
+    except Exception as e:
+        print(f"[ERROR] Pipeline processing failed: {str(e)}")
+        return None
