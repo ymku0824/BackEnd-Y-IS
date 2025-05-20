@@ -1,0 +1,10 @@
+# Ignore virtual environments
+venv/
+.venv/
+
+# Ignore large video files
+static/uploads/*.mp4
+
+# Ignore PyTorch libraries
+venv/lib/python3.10/site-packages/torch/lib/*.so
+venv/lib/python3.10/site-packages/llvmlite/binding/*.so
