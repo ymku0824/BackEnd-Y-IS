@@ -1,6 +1,8 @@
 import shutil
 import subprocess
 import os
+import pandas as pd
+
 from services.whisper_service import transcribe_audio
 from services.db_service import save_metadata, save_sentences
 from services.gemini_service import generate_chapter_titles
@@ -33,15 +35,24 @@ def process_video(video_path, video_id, user_id, category):
         # Step 3: Save transcribed sentences to DB
         save_sentences(video_id, transcription)
 
-        # Step 4: Generate chapter titles (can be improved later)
+        # Step 4: Generate chapter titles
         chapter_path = generate_chapter_titles(audio_path, video_id)
-        apply_chapter_groups(video_id, chapter_path)
         if not chapter_path:
             print("[ERROR] Chapter title generation failed.")
             return None
 
-        # Step 5: Save metadata
-        summary = "Generated summary"  # Placeholder
+        # Step 5: Apply group mappings
+        apply_chapter_groups(video_id, chapter_path)
+
+        # Step 6: Generate summary from chapter titles (placeholder)
+        try:
+            chapter_df = pd.read_csv(chapter_path)
+            summary = " / ".join(chapter_df["chapter_title"].tolist()[:5])
+        except Exception as e:
+            summary = "Summary generation failed"
+            print(f"[ERROR] Summary generation failed: {str(e)}")
+
+        # Step 7: Save metadata
         metadata = {
             "video_id": video_id,
             "user_id": user_id,
@@ -57,3 +68,4 @@ def process_video(video_path, video_id, user_id, category):
     except Exception as e:
         print(f"[ERROR] Pipeline processing failed: {str(e)}")
         return None
+        
