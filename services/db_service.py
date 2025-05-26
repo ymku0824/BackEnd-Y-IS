@@ -1,5 +1,26 @@
 from sqlalchemy.exc import SQLAlchemyError
 from models import db, Video
+from models.sentence import Sentence  # 새로 만든 Sentence 모델 
+
+def save_sentences(video_id, sentences):
+    try:
+        sentence_objects = []
+        for idx, item in enumerate(sentences):
+            sentence = Sentence(
+                video_id=video_id,
+                number=idx + 1,
+                start_time=item['timestamp'],
+                contents=item['text'],
+                group_number=0  # 초기값
+            )
+            sentence_objects.append(sentence)
+
+        db.session.bulk_save_objects(sentence_objects)
+        db.session.commit()
+        print(f"[INFO] Saved {len(sentences)} sentences for video {video_id}")
+    except Exception as e:
+        db.session.rollback()
+        print(f"[ERROR] Failed to save sentences: {str(e)}")
 
 def save_metadata(video_id, metadata):
     try:
