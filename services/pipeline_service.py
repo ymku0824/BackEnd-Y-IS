@@ -4,6 +4,7 @@ import os
 from services.whisper_service import transcribe_audio
 from services.db_service import save_metadata, save_sentences
 from services.gemini_service import generate_chapter_titles
+from services.grouping_service import apply_chapter_groups
 
 def convert_mp4_to_mp3(mp4_path):
     mp3_path = mp4_path.replace(".mp4", ".mp3")
@@ -34,6 +35,7 @@ def process_video(video_path, video_id, user_id, category):
 
         # Step 4: Generate chapter titles (can be improved later)
         chapter_path = generate_chapter_titles(audio_path, video_id)
+        apply_chapter_groups(video_id, chapter_path)
         if not chapter_path:
             print("[ERROR] Chapter title generation failed.")
             return None
