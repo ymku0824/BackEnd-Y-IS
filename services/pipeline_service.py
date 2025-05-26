@@ -4,6 +4,7 @@ import os
 from services.whisper_service import transcribe_audio
 from services.db_service import save_metadata
 from services.gemini_service import generate_chapter_titles
+from services.db_service import save_sentences
 
 def convert_mp4_to_mp3(mp4_path):
     mp3_path = mp4_path.replace(".mp4", ".mp3")
