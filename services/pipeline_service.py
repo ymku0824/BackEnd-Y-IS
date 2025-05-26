@@ -2,14 +2,12 @@ import shutil
 import subprocess
 import os
 from services.whisper_service import transcribe_audio
-from services.db_service import save_metadata
+from services.db_service import save_metadata, save_sentences
 from services.gemini_service import generate_chapter_titles
-from services.db_service import save_sentences
 
 def convert_mp4_to_mp3(mp4_path):
     mp3_path = mp4_path.replace(".mp4", ".mp3")
     try:
-        # ffmpeg를 사용하여 mp4를 mp3로 변환
         subprocess.run(['ffmpeg', '-i', mp4_path, '-q:a', '0', '-map', 'a', mp3_path], check=True)
         print(f"[INFO] MP4 to MP3 conversion successful: {mp3_path}")
         return mp3_path
@@ -25,19 +23,22 @@ def process_video(video_path, video_id, user_id, category):
             print("[ERROR] Audio conversion failed.")
             return None
 
-        # Step 2: Transcribe audio from the converted mp3 file
+        # Step 2: Transcribe audio
         transcription = transcribe_audio(audio_path)
         if not transcription:
             print("[ERROR] Transcription failed.")
             return None
 
-        # Step 3: Generate chapter titles from transcription
+        # Step 3: Save transcribed sentences to DB
+        save_sentences(video_id, transcription)
+
+        # Step 4: Generate chapter titles (can be improved later)
         chapter_path = generate_chapter_titles(audio_path, video_id)
         if not chapter_path:
             print("[ERROR] Chapter title generation failed.")
             return None
 
-        # Step 4: Save metadata to PostgreSQL
+        # Step 5: Save metadata
         summary = "Generated summary"  # Placeholder
         metadata = {
             "video_id": video_id,
@@ -45,7 +46,7 @@ def process_video(video_path, video_id, user_id, category):
             "category": category,
             "status": "processed",
             "file_url": video_path,
-            "transcription": "\n".join(transcription),
+            "transcription": "\n".join([s["text"] for s in transcription]),
             "summary": summary
         }
         save_metadata(video_id, metadata)
