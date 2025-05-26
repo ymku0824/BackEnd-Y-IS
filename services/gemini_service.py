@@ -1,34 +1,34 @@
-# gpt_service.py - Generate chapter titles using Gemini model
+e# gpt_service.py - Generate chapter titles using Gemini model
 import pandas as pd
 from tqdm import tqdm
 import google.generativeai as genai
 import os
 
-# \ud658\uacbd \ubcc0\uc218\uc5d0\uc11c API \ud0a4 \uac00\uc838\uc624\uae30
+# .env에서 API 키 가져오기
 genai.configure(api_key=os.getenv("AIZaSyANaWrhmztst9WVHq-FFA6juk1IDoQtbp"))
 model = genai.GenerativeModel("models/gemini-1.5-flash")
 
 
 def generate_chapter_titles(input_path, video_id):
     try:
-        # \ub370\uc774\ud130 \ub85c\ub4dc
+        # 데이터 로드
         df = pd.read_csv(input_path)
         df = df[['block_index', 'text', 'timestamp']].dropna()
         df.columns = ['index', 'text', 'timestamp']
 
-        # \ucc55\ud130 \uc81c\ubaa9 \uc0dd\uc131
+        # 챕터 제목 생성
         chapter_data = []
         for idx, group in tqdm(df.groupby("index")):
             text_block = " ".join(group["text"].tolist())[:1500]
             timestamp = group["timestamp"].iloc[0]
 
             prompt = f"""
-            \ub2e4\uc74c \uc790\ub9c9 \ub0b4\uc6a9\uc744 \ub300\ud45c\ud560 \uc218 \uc788\ub294 \uac04\uacb0\ud55c \ud55c\uad6d\uc5b4 \ucc55\ud130 \uc81c\ubaa9\uc744 **\ud55c \ubb38\uc7a5\uc73c\ub85c** \uc791\uc131\ud574 \uc8fc\uc138\uc694.
-            - \uc124\uba85\ud558\uc9c0 \ub9c8\uc138\uc694.
-            - \uc81c\ubaa9 \ud6c4\ubcf4\ub97c \ub098\uc5f4\ud558\uc9c0 \ub9c8\uc138\uc694.
-            - '**' \ub610\ub294 \uc778\uc6a9 \ubd80\ud638 \uc5c6\uc774 \uc81c\ubaa9 **\ub0b4\uc6a9\ub9cc** \ucd9c\ub825\ud558\uc138\uc694.
-            - \uc790\ub9c9 \ub0b4\uc6a9\uc774 \ubd80\uc871\ud574\ub3c4 \uc784\uc758\ub85c \uac00\uc7a5 \uc801\uc808\ud55c \uc81c\ubaa9\uc744 \ub9cc\ub4e4\uc5b4 \uc8fc\uc138\uc694.
-            [\uc790\ub9c9 \ub0b4\uc6a9]
+        다음 자막 내용을 대표할 수 있는 간결한 한국어 챕터 제목을 **한 문장으로** 작성해 주세요.
+            - 설명하지 마세요
+            - 제목 후보를 나열하지 마세요.
+            _ '**' 또는 인용 부호 없이 제목 **내용만** 출력하세요.
+            - 자막 내용이 부족해도 임의로 가장 적절한 제목을 만들어 주세요.
+            [자막 내용]
             {text_block}
             """
 
@@ -36,4 +36,19 @@ def generate_chapter_titles(input_path, video_id):
                 response = model.generate_content(prompt)
                 title = response.text.strip().split("\n")[0]
             except Exception as e:
-                title = "\ub0b4\uc6a9 \uc694\uc57d"
+                title = "내용 요약"
+
+            chapter_data.append({
+                "timestamp": timestamp,
+                "chapter_title": title
+            })
+
+        # 결과 저장 경로
+        output_path = f"static/uploads/{video_id}/chapters.csv"
+        chapter_df = pd.DataFrame(chapter_data)
+        chapter_df.to_csv(output_path, index=False)
+        print("[INFO] 저장 완료:", output_path)
+        return output_path
+    except Exception as e:
+        print(f"[ERROR] Chapter title generation failed: {str(e)}")
+        return None
