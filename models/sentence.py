@@ -18,7 +18,6 @@ class Sentence(db.Model):
     #group_number: 그룹 번호(나중에 이거 업데이트해서 수정 사항 반영합니다)
     group_number = db.Column(db.Integer, nullable=False, default=0)
     #chapter_title: 챕터 제목
-    chapter_title = db.Column(contents = db.Text, nullable=False)
-
+    chapter_title = db.Column(db.String(255), nullable=True)
     def __repr__(self):
         return f"<Sentence {self.number} - {self.start_time}>"
