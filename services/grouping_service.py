@@ -1,4 +1,3 @@
-# services/grouping_service.py
 import pandas as pd
 from models import db
 from models.sentence import Sentence
@@ -20,33 +19,29 @@ def parse_time(time_str):
 
 def apply_chapter_groups(video_id, chapter_csv_path):
     try:
-        # 1. 챕터 타임스탬프 읽기
+        # 1. 챕터 타임스탬프 및 제목 로딩
         chapter_df = pd.read_csv(chapter_csv_path)
         chapter_df["timestamp"] = chapter_df["timestamp"].apply(parse_time)
         chapter_df = chapter_df.sort_values("timestamp").reset_index(drop=True)
 
-        # 2. 해당 비디오의 문장 가져오기
+        # 2. 문장 목록 불러오기
         sentences = Sentence.query.filter_by(video_id=video_id).order_by(Sentence.number).all()
         if not sentences:
             print("[WARN] No sentences found for video.")
             return False
 
-        # 3. 문장을 챕터 타임스탬프 기준으로 그룹화
+        # 3. 챕터 기준으로 문장 그룹화 및 제목 삽입
         group_idx = 0
-        current_chapter_time = chapter_df.iloc[group_idx]["timestamp"] if not chapter_df.empty else None
-
         for sentence in sentences:
             sentence_time = parse_time(sentence.start_time)
-
-            # 다음 챕터 기준 시간 도달하면 group index 증가
             while group_idx + 1 < len(chapter_df) and sentence_time >= chapter_df.iloc[group_idx + 1]["timestamp"]:
                 group_idx += 1
 
             sentence.group_number = group_idx
+            sentence.chapter_title = chapter_df.iloc[group_idx]["chapter_title"]
 
-        # 4. 저장
         db.session.commit()
-        print(f"[INFO] Group numbers updated for video {video_id}")
+        print(f"[INFO] Group numbers and titles updated for video {video_id}")
         return True
 
     except Exception as e:
