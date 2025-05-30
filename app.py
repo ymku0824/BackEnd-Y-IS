@@ -29,14 +29,12 @@ def index():
 # 블루프린트 등록을 맨 아래로 이동하여 순환참조 방지
 from routes.upload import upload_bp
 from routes.summarize import summarize_bp
-from routes.edit import edit_bp
 from routes.status import status_bp
 from routes.dashboard import dashboard_bp
 from routes.sentence import sentence_bp
 
 app.register_blueprint(upload_bp)
 app.register_blueprint(summarize_bp)
-app.register_blueprint(edit_bp)
 app.register_blueprint(status_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(sentence_bp)
