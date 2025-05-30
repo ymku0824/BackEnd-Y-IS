@@ -29,7 +29,8 @@ def save_metadata(video_id, metadata):
         summary = metadata.get("summary", "N/A")
 
         video = Video(
-            video_id=video_id,
+            id=video_id,  # ✅ 반드시 필요!
+            video_id=str(video_id),
             user_id=metadata.get("user_id", "unknown"),
             category=metadata.get("category", "general"),
             status=metadata.get("status", "unknown"),
