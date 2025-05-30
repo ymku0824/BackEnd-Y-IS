@@ -21,3 +21,4 @@ class Sentence(db.Model):
     chapter_title = db.Column(db.String(255), nullable=True)
     def __repr__(self):
         return f"<Sentence {self.number} - {self.start_time}>"
+
