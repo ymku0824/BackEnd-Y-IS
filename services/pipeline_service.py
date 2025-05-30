@@ -36,37 +36,43 @@ def process_video(video_path, video_id, user_id, category):
             print("[ERROR] Transcription failed.")
             return None
 
-        # Step 4: Save transcribed sentences to DB
+        # Step 4: Generate summary from chapter titles (placeholder)
+        summary = "N/A"
+
+        # Step 5: Save metadata to videos table FIRST to satisfy FK constraint
+        metadata = {
+            "video_id": str(video_uuid),
+            "user_id": user_id,
+            "category": category,
+            "status": "uploaded",
+            "file_url": video_path,
+            "transcription": "N/A",
+            "summary": summary
+        }
+        save_metadata(video_uuid, metadata)
+
+        # Step 6: Save transcribed sentences to DB
         save_sentences(video_uuid, transcription)
 
-        # Step 5: Generate chapter titles
+        # Step 7: Generate chapter titles
         chapter_path = generate_chapter_titles(audio_path, video_uuid)
         if not chapter_path:
             print("[ERROR] Chapter title generation failed.")
             return None
 
-        # Step 6: Apply group mappings
+        # Step 8: Apply group mappings
         apply_chapter_groups(video_uuid, chapter_path)
 
-        # Step 7: Generate summary from chapter titles (placeholder)
+        # Step 9: Update summary
         try:
             chapter_df = pd.read_csv(chapter_path)
             summary = " / ".join(chapter_df["chapter_title"].tolist()[:5])
+            metadata["summary"] = summary
+            metadata["transcription"] = "\n".join([s["text"] for s in transcription])
+            save_metadata(video_uuid, metadata)  # Optional: update summary/transcription
         except Exception as e:
-            summary = "Summary generation failed"
             print(f"[ERROR] Summary generation failed: {str(e)}")
 
-        # Step 8: Save metadata to videos table
-        metadata = {
-            "video_id": str(video_uuid),  # stored as string for external reference
-            "user_id": user_id,
-            "category": category,
-            "status": "processed",
-            "file_url": video_path,
-            "transcription": "\n".join([s["text"] for s in transcription]),
-            "summary": summary
-        }
-        save_metadata(video_uuid, metadata)
         print("[INFO] Pipeline completed successfully.")
         return metadata
     except Exception as e:
