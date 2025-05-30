@@ -1,0 +1,9 @@
+flask
+flask-cors
+flask-sqlalchemy
+python-dotenv
+psycopg2-binary
+git+https://github.com/openai/whisper.git
+google-generativeai
+tqdm
+pandas
